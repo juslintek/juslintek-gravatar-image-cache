@@ -1,0 +1,16 @@
+{
+    "name": "juslintek/juslintek-gravatar-image-cache",
+    "description": "Plugin for wordpress gravatar image cache",
+    "type": "wordpress-plugin",
+    "license": "GPL-2.0+",
+    "authors": [
+        {
+            "name": "Linas Jusys",
+            "email": "jusys.linas@gmail.com"
+        }
+    ],
+    "minimum-stability": "dev",
+    "require": {
+    	"composer/installers": "~1.0"
+    }
+}
