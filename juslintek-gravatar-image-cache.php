@@ -7,7 +7,7 @@
  * Author URI:      YOUR SITE HERE
  * Text Domain:     juslintek-gravatar-image-cache
  * Domain Path:     /languages
- * Version:         0.1.0
+ * Version:         0.1.2
  *
  * @package         Juslintek_Gravatar_Image_Cache
  */
@@ -363,7 +363,7 @@ class JuslintekGravatarImageCache
 
 		$avatar_file_path = $this->gravatars_cache_dir . $gravatar_id . '_' . $size . '.jpg';
 
-		if (($avatar = $this->get_from_cache($gravatar_id, $size)) !== null && $wp_filesystem->is_file($avatar_file_path)) {
+		if (($avatar = $this->get_from_cache($gravatar_id, $size)) !== null && $wp_filesystem->is_file(str_replace($this->gravatars_cache_url, $this->gravatars_cache_dir, $avatar->url))) {
 			$default_404 = $this->prefetch_default_avatar($size);
 
 			if (
