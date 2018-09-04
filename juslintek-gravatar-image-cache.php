@@ -7,7 +7,7 @@
  * Author URI:      YOUR SITE HERE
  * Text Domain:     juslintek-gravatar-image-cache
  * Domain Path:     /languages
- * Version:         0.1.2
+ * Version:         0.1.3
  *
  * @package         Juslintek_Gravatar_Image_Cache
  */
@@ -16,10 +16,10 @@ if (!defined('WPINC')) {
 	die;
 }
 
-define('JUSLINTEK_GRAVATAR_IMAGE_CACHE', '0.1.0');
+define('JUSLINTEK_GRAVATAR_IMAGE_CACHE', '0.1.3');
 
-if ( defined( 'WP_CLI' ) && WP_CLI && ! class_exists( 'WP_CLI_Juslintek_GIC_Command' ) ) {
-	require_once dirname( __FILE__ ) . '/cli.php';
+if (defined('WP_CLI') && WP_CLI && !class_exists('WP_CLI_Juslintek_GIC_Command')) {
+	require_once dirname(__FILE__) . '/cli.php';
 }
 
 function juslintek_gic_load_textdomain($locale = null)
@@ -57,14 +57,11 @@ function juslintek_gic_load_textdomain($locale = null)
 	return false;
 }
 
-function juslintek_gic_activate()
+
+function do_setup_actions()
 {
-
-	global $wpdb;
-
+	global $wpdb, $wp_filesystem;
 	$table_name = $wpdb->prefix . 'avatars_cache';
-
-	juslintek_gic_load_textdomain();
 
 	if ($wpdb->get_var("SHOW TABLES LIKE '$table_name'") != $table_name) {
 
@@ -89,6 +86,19 @@ function juslintek_gic_activate()
 		}
 	}
 
+	$upload_dir = wp_get_upload_dir();
+	$gravatars_cache_dir = trailingslashit($upload_dir['basedir'] . '/gravatars_cache');
+
+	if ($wp_filesystem !== null && !$wp_filesystem->is_dir($gravatars_cache_dir)) {
+		wp_mkdir_p($gravatars_cache_dir);
+	}
+}
+
+function juslintek_gic_activate($network_wide)
+{
+
+	juslintek_gic_load_textdomain();
+
 	/**
 	 * @var WP_Filesystem_Direct $wp_filesystem
 	 */
@@ -108,23 +118,26 @@ function juslintek_gic_activate()
 		}
 	}
 
-	$upload_dir = wp_get_upload_dir();
-	$gravatars_cache_dir = trailingslashit($upload_dir['basedir'] . '/gravatars_cache');
+	if (is_multisite() && $network_wide) {
 
-	if ($wp_filesystem !== null && !$wp_filesystem->is_dir($gravatars_cache_dir)) {
-		wp_mkdir_p($gravatars_cache_dir);
+		global $wpdb;
+
+		foreach ($wpdb->get_col("SELECT blog_id FROM $wpdb->blogs") as $blog_id) {
+			switch_to_blog($blog_id);
+			do_setup_actions();
+			restore_current_blog();
+		}
+
+	} else {
+		do_setup_actions();
 	}
 }
 
-function juslintek_gic_dectivate()
+function do_uninstall_actions()
 {
-
-	global $wpdb;
+	global $wpdb, $wp_filesystem;
 
 	$table_name = $wpdb->prefix . 'avatars_cache';
-
-	juslintek_gic_load_textdomain();
-
 	if ($wpdb->get_var("SHOW TABLES LIKE '$table_name'") == $table_name) {
 
 		$create_table_query = "DROP TABLE `{$table_name}`;";
@@ -138,6 +151,19 @@ function juslintek_gic_dectivate()
 		}
 	}
 
+	$upload_dir = wp_get_upload_dir();
+
+	$gravatars_cache_dir = trailingslashit($upload_dir['basedir'] . '/gravatars_cache');
+
+	if ($wp_filesystem !== null && $wp_filesystem->is_dir($gravatars_cache_dir)) {
+		$wp_filesystem->rmdir($gravatars_cache_dir, true);
+	}
+}
+
+function juslintek_gic_dectivate($network_wide)
+{
+	juslintek_gic_load_textdomain();
+
 	/**
 	 * @var WP_Filesystem_Direct $wp_filesystem
 	 */
@@ -157,12 +183,18 @@ function juslintek_gic_dectivate()
 		}
 	}
 
-	$upload_dir = wp_get_upload_dir();
+	if (is_multisite() && $network_wide) {
 
-	$gravatars_cache_dir = trailingslashit($upload_dir['basedir'] . '/gravatars_cache');
+		global $wpdb;
 
-	if ($wp_filesystem !== null && $wp_filesystem->is_dir($gravatars_cache_dir)) {
-		$wp_filesystem->rmdir($gravatars_cache_dir, true);
+		foreach ($wpdb->get_col("SELECT blog_id FROM $wpdb->blogs") as $blog_id) {
+			switch_to_blog($blog_id);
+			do_uninstall_actions();
+			restore_current_blog();
+		}
+
+	} else {
+		do_uninstall_actions();
 	}
 }
 
